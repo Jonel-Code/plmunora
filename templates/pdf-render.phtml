@@ -1,0 +1,16 @@
+<?php 
+    // echo $pdf_path;
+    // header("Content-type: application/pdf");    
+    if(isset($pdf_path)){
+        // header("Content-Disposition: inline; filename=$pdf_path");
+        // readfile($pdf_path);
+        echo "
+        <style>
+         body {
+             margin: 0;
+             overflow: hidden;
+        }
+        </style>";
+        echo "<iframe src='$pdf_path' width=\"100%\" style=\"height:100%\"></iframe>";
+    }    
+?>
