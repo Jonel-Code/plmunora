@@ -51,7 +51,6 @@ class TblStudent extends SqlTable {
         $ex->execute([trim($name), trim($sid)]);
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
-
     
 }
 

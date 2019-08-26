@@ -37,6 +37,7 @@ class TblRequestDocument extends SqlTable {
             $conn->prepare($sql)->execute([$req_detail_id, $value]);
         }
     }
+
 }
 
 TblRequestDocument::create_table();

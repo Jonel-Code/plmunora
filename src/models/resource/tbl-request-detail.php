@@ -64,6 +64,98 @@ class TblRequestDetails extends SqlTable {
         $ex->execute([$stud_acc_id, $hash_key]);
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
+
+    
+    public static function student_req_listing($student_id){
+        $tname = self::$table_name;
+        $sql = "
+        select $tname.req_id, hash_key, $tname.date_of_request,
+        tblRequestDetails.registrar_acc_id,
+        tblRequestDetails.treasury_acc_id,
+        GROUP_CONCAT(DISTINCT(
+            select title from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as titles,
+        GROUP_CONCAT(DISTINCT(
+            select description from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as description,
+        Sum(DISTINCT(
+            select price from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        )) as total
+        from $tname 
+        inner join tblRequestDocument on 
+        $tname.req_id = tblRequestDocument.req_detail_id
+        inner join tblDocument on
+        tblRequestDocument.doc_id = tblDocument.doc_id
+        inner join tblStudent on
+        $tname.stud_acc_id = tblStudent.acc_id
+        where sid = ?
+        GROUP BY
+        $tname.req_id
+        ;";
+        $conn = self::get_connection();
+        $ex = $conn->prepare($sql);
+        $ex->execute([$student_id]);
+        return $ex->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function get_req_contents($req_id){
+        $tname = self::$table_name;
+        $sql = "
+        select $tname.req_id, hash_key, $tname.date_of_request,
+        tblRequestDetails.registrar_acc_id,
+        tblRequestDetails.treasury_acc_id,
+        GROUP_CONCAT(DISTINCT(
+            select title from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as titles,
+        GROUP_CONCAT(DISTINCT(
+            select description from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as description,
+        Sum(DISTINCT(
+            select price from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        )) as total
+        from $tname 
+        inner join tblRequestDocument on 
+        $tname.req_id = tblRequestDocument.req_detail_id
+        inner join tblDocument on
+        tblRequestDocument.doc_id = tblDocument.doc_id
+        inner join tblStudent on
+        $tname.stud_acc_id = tblStudent.acc_id
+        where $tname.req_id = ?
+        GROUP BY
+        $tname.req_id
+        ;";
+        $conn = self::get_connection();
+        $ex = $conn->prepare($sql);
+        $ex->execute([$req_id]);
+        return $ex->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function delete_request($req_id){
+       try {
+            $toDelete= self::get_req_contents($req_id)[0];
+            var_dump($toDelete);
+            if(isset($toDelete['registrar_acc_id']) 
+                || isset($toDelete['treasury_acc_id'])){
+                return ['message'=>'Cannot delete Request'];
+            }
+            $conn = self::get_connection();
+            $sql = "
+                delete from tblRequestDetails where req_id = ?;
+                delete from tblRequestDocument where req_detail_id = ?;
+            ";
+            $ex = $conn->prepare($sql);
+            $ex->execute([$req_id, $req_id]);
+            return ['message'=>'Deleted'];
+       } catch (Exception $e) {
+            return ['message'=> $e->getMessage()];
+       }
+    }
 }
 
 TblRequestDetails::create_table();

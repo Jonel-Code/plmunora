@@ -51,6 +51,7 @@ class TblDocument extends SqlTable {
         $ex->execute();
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
+
 }
 
 TblDocument::create_table();

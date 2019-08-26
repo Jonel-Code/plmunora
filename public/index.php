@@ -57,6 +57,12 @@ $docs_listing($app);
 $submit_req_form = require __DIR__ . '/../src/controllers/submit-req-form.php';
 $submit_req_form($app, $temp_folder);
 
+$student_req_listing = require __DIR__ . '/../src/controllers/student-request-listing.php';
+$student_req_listing($app);
+
+$student_req_removal = require __DIR__ . '/../src/controllers/request-removal.php';
+$student_req_removal($app);
+
 // get-req-pdf.php
 $get_req_pdf = require __DIR__ . '/../src/controllers/get-req-pdf.php';
 $get_req_pdf($app, $temp_folder);
