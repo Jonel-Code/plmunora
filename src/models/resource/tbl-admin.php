@@ -1,9 +1,11 @@
 <?php
+
 namespace SqlTable;
 
 require_once __DIR__ . '/table.php';
 
-class TblAdmin extends SqlTable {
+class TblAdmin extends SqlTable
+{
     public static $table_name = 'tblAdmin';
     public $acc_id;
     public $name;
@@ -11,18 +13,20 @@ class TblAdmin extends SqlTable {
     public $account_type; //admin or employee
     public $email;
     public $office; // treasury or registrar
-    function __construct($name, $eid, $account_type, $email, $office){
+    function __construct($name, $eid, $account_type, $email, $office)
+    {
         $this->name = $name;
         $this->eid = $eid;
         $this->account_type = $account_type;
         $this->email = $email;
         $this->office = $office;
     }
-    public static function create_table() {
-            $tname = self::$table_name;
-            try {
-                $conn = self::get_connection();       
-                $sql = "CREATE table if not exists $tname(
+    public static function create_table()
+    {
+        $tname = self::$table_name;
+        try {
+            $conn = self::get_connection();
+            $sql = "CREATE table if not exists $tname(
                 acc_id          INT( 11 )       AUTO_INCREMENT PRIMARY KEY,
                 name            VARCHAR( 50 )   NOT NULL,         
                 eid             VARCHAR( 50 )   NOT NULL UNIQUE,
@@ -30,13 +34,14 @@ class TblAdmin extends SqlTable {
                 email           VARCHAR( 50 )   NOT NULL UNIQUE,
                 office          VARCHAR( 50 )   NOT NULL
                 );";
-                $conn->exec($sql);
-            } catch(PDOException $e) {
-                // echo $e->getMessage();
-            }
+            $conn->exec($sql);
+        } catch (PDOException $e) {
+            // echo $e->getMessage();
+        }
     }
 
-    public static function new_admin($name, $eid, $account_type, $email, $office){
+    public static function new_admin($name, $eid, $account_type, $email, $office)
+    {
         $conn = self::get_connection();
         $tname = self::$table_name;
         $sql = "
@@ -46,7 +51,8 @@ class TblAdmin extends SqlTable {
         $conn->prepare($sql)->execute([trim($name), trim($eid), trim($account_type), trim($email), trim($office)]);
     }
 
-    public static function get_admin($name, $sid){
+    public static function get_admin($name, $sid)
+    {
         $conn = self::get_connection();
         $tname = self::$table_name;
         $sql = "

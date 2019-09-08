@@ -4,6 +4,7 @@ namespace SqlTable;
 
 require_once __DIR__ . '/table.php';
 require_once __DIR__ . '/tbl-request-document.php';
+require_once __DIR__ . '/tbl-admin.php';
 
 class TblRequestDetails extends SqlTable
 {
@@ -167,6 +168,99 @@ class TblRequestDetails extends SqlTable
         } catch (Exception $e) {
             return ['message' => $e->getMessage()];
         }
+    }
+
+    public static function get_all_request()
+    {
+        $tname = self::$table_name;
+        $sql = "
+        select $tname.req_id, hash_key, $tname.date_of_request,
+        tblRequestDetails.registrar_acc_id,
+        tblRequestDetails.treasury_acc_id,
+        tblStudent.sid,
+        GROUP_CONCAT(DISTINCT(
+            select title from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as titles,
+        GROUP_CONCAT(DISTINCT(
+            select description from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        ) Separator ', ') as description,
+        Sum(DISTINCT(
+            select price from tblDocument
+            where tblRequestDocument.doc_id = tblDocument.doc_id
+        )) as total
+        from $tname 
+        inner join tblRequestDocument on 
+        $tname.req_id = tblRequestDocument.req_detail_id
+        inner join tblDocument on
+        tblRequestDocument.doc_id = tblDocument.doc_id
+        inner join tblStudent on
+        $tname.stud_acc_id = tblStudent.acc_id
+        GROUP BY
+        $tname.req_id
+        ;";
+        $conn = self::get_connection();
+        $ex = $conn->prepare($sql);
+        $ex->execute();
+        return $ex->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function approve($request_id, $employee_name, $employee_id)
+    {
+        $employee = TblAdmin::get_admin($employee_name, $employee_id);
+
+        if ($employee == null) {
+            throw new \Exception('Error in getting the data of approver');
+        }
+        $eid = $employee[0]['eid'];
+        $office = $employee[0]['office'];
+        $columnToUpdate = '';
+        // registrar_acc_id
+        // treasury_acc_id
+        if ($office == 'registrar') {
+            $columnToUpdate = 'registrar_acc_id';
+        } elseif ($office == 'treasury') {
+            $columnToUpdate = 'treasury_acc_id';
+        } else {
+            throw new \Exception('Unknown employee office');
+        }
+        $tname = self::$table_name;
+        $sql = "
+            UPDATE $tname
+            SET $columnToUpdate=?
+            WHERE req_id=?
+        ;";
+        $conn = self::get_connection();
+        $conn->prepare($sql)->execute([$eid, $request_id,]);
+    }
+
+
+    public static function un_approve($request_id, $employee_name, $employee_id)
+    {
+        $employee = TblAdmin::get_admin($employee_name, $employee_id);
+
+        if ($employee == null) {
+            throw new \Exception('Error in getting the data of approver');
+        }
+        $eid = $employee[0]['eid'];
+        $office = $employee[0]['office'];
+        $columnToUpdate = '';
+        if ($office == 'registrar') {
+            $columnToUpdate = 'registrar_acc_id';
+        } elseif ($office == 'treasury') {
+            $columnToUpdate = 'treasury_acc_id';
+        } else {
+            throw new \Exception('Unknown employee office');
+        }
+        $tname = self::$table_name;
+        $sql = "
+            UPDATE $tname
+            SET $columnToUpdate=NULL
+            WHERE req_id=?
+        ;";
+        $conn = self::get_connection();
+        $conn->prepare($sql)->execute([$request_id]);
     }
 }
 
