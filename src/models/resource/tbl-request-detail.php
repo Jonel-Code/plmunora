@@ -1,28 +1,33 @@
 <?php
+
 namespace SqlTable;
+
 require_once __DIR__ . '/table.php';
 require_once __DIR__ . '/tbl-request-document.php';
 
-class TblRequestDetails extends SqlTable {
+class TblRequestDetails extends SqlTable
+{
     public static $table_name = 'tblRequestDetails';
     public $req_id;
     public $stud_acc_id;
     public $date_of_request;
-    public $hash_key; 
-    public $registrar_acc_id; 
-    public $treasury_acc_id;     
-    function __construct($stud_acc_id, $date_of_request, $hash_key=''){
+    public $hash_key;
+    public $registrar_acc_id;
+    public $treasury_acc_id;
+    function __construct($stud_acc_id, $date_of_request, $hash_key = '')
+    {
         $this->stud_acc_id = $stud_acc_id;
         $this->date_of_request = $date_of_request;
         $this->hash_key = $hash_key;
-        if(strlen($hash_key) == 0){
+        if (strlen($hash_key) == 0) {
             $this->hash_key = uniqid();
-        }        
+        }
     }
-    public static function create_table() {
-            $tname = self::$table_name;
-            try {   
-                $sql = "CREATE table if not exists $tname(
+    public static function create_table()
+    {
+        $tname = self::$table_name;
+        try {
+            $sql = "CREATE table if not exists $tname(
                 req_id           INT( 11 )     AUTO_INCREMENT PRIMARY KEY,
                 stud_acc_id      VARCHAR( 50 ) NOT NULL,
                 date_of_request  DATE          NOT NULL,
@@ -30,13 +35,14 @@ class TblRequestDetails extends SqlTable {
                 registrar_acc_id INT( 11 )     ,
                 treasury_acc_id  INT( 11 )                     
                 );";
-                self::exec($sql);
-            } catch(PDOException $e) {
-                // echo $e->getMessage();
-            }
+            self::exec($sql);
+        } catch (PDOException $e) {
+            // echo $e->getMessage();
+        }
     }
 
-    public static function new_request($stud_acc_id, $doc_ids){
+    public static function new_request($stud_acc_id, $doc_ids)
+    {
         $tname = self::$table_name;
         $hash_key = uniqid();
         // $date_of_request = date('m/d/Y h:i:s');
@@ -45,14 +51,15 @@ class TblRequestDetails extends SqlTable {
             values(?, NOW(),?)
         ;";
         $conn = self::get_connection();
-        $conn->prepare($sql)->execute([$stud_acc_id , $hash_key]);
+        $conn->prepare($sql)->execute([$stud_acc_id, $hash_key]);
         $curr_req = self::get_request_details($stud_acc_id, $hash_key)[0];
         $req_id = $curr_req['req_id'];
         TblRequestDocument::new_req_doc($req_id, $doc_ids);
         return $curr_req;
     }
 
-    public static function get_request_details($stud_acc_id, $hash_key){
+    public static function get_request_details($stud_acc_id, $hash_key)
+    {
         $tname = self::$table_name;
         $sql = "
             SELECT * from $tname
@@ -65,8 +72,9 @@ class TblRequestDetails extends SqlTable {
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    
-    public static function student_req_listing($student_id){
+
+    public static function student_req_listing($student_id)
+    {
         $tname = self::$table_name;
         $sql = "
         select $tname.req_id, hash_key, $tname.date_of_request,
@@ -101,7 +109,8 @@ class TblRequestDetails extends SqlTable {
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public static function get_req_contents($req_id){
+    public static function get_req_contents($req_id)
+    {
         $tname = self::$table_name;
         $sql = "
         select $tname.req_id, hash_key, $tname.date_of_request,
@@ -136,13 +145,16 @@ class TblRequestDetails extends SqlTable {
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public static function delete_request($req_id){
-       try {
-            $toDelete= self::get_req_contents($req_id)[0];
-            var_dump($toDelete);
-            if(isset($toDelete['registrar_acc_id']) 
-                || isset($toDelete['treasury_acc_id'])){
-                return ['message'=>'Cannot delete Request'];
+    public static function delete_request($req_id)
+    {
+        try {
+            $toDelete = self::get_req_contents($req_id)[0];
+            // var_dump($toDelete);
+            if (
+                isset($toDelete['registrar_acc_id'])
+                || isset($toDelete['treasury_acc_id'])
+            ) {
+                return ['message' => 'Cannot delete Request'];
             }
             $conn = self::get_connection();
             $sql = "
@@ -151,10 +163,10 @@ class TblRequestDetails extends SqlTable {
             ";
             $ex = $conn->prepare($sql);
             $ex->execute([$req_id, $req_id]);
-            return ['message'=>'Deleted'];
-       } catch (Exception $e) {
-            return ['message'=> $e->getMessage()];
-       }
+            return ['message' => 'Deleted.', 'hash_key' => $toDelete['hash_key']];
+        } catch (Exception $e) {
+            return ['message' => $e->getMessage()];
+        }
     }
 }
 

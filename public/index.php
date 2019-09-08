@@ -34,7 +34,7 @@ $routes($app);
 $temp_folder =  __DIR__ . '\\temp';
 
 $print_hello_world = require __DIR__ . '/../src/controllers/print-hello-world.php';
-$print_hello_world($app,$temp_folder);
+$print_hello_world($app, $temp_folder);
 
 $test_call = require __DIR__ . '/../src/controllers/test-call.php';
 $test_call($app);
@@ -62,6 +62,13 @@ $student_req_listing($app);
 
 $student_req_removal = require __DIR__ . '/../src/controllers/request-removal.php';
 $student_req_removal($app);
+
+$document_controller = require __DIR__ . '/../src/controllers/document-controller.php';
+$document_controller($app);
+
+$admin_controller = require __DIR__ . '/../src/controllers/admin-controller.php';
+$admin_controller($app);
+
 
 // get-req-pdf.php
 $get_req_pdf = require __DIR__ . '/../src/controllers/get-req-pdf.php';
