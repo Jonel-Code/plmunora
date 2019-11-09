@@ -42,7 +42,9 @@ return function ($app) {
                 'hash_key' => $value['hash_key'],
                 'registrarAccId' => $value['registrar_acc_id'],
                 'treasuryAccId' => $value['treasury_acc_id'],
-                'studentId' => $value['sid']
+                'studentId' => $value['sid'],
+                'date_payed' => $value['date_payed'],
+                'or_number' => $value['or_number']
             ];
         }
         return $response
@@ -54,8 +56,9 @@ return function ($app) {
         $name = $request->getParam('name');
         $employee_id = $request->getParam('employeeId');
         $request_id = $request->getParam('requestId');
+        $or_number = $request->getParam('orNumber');
         try {
-            SqlTable\TblRequestDetails::approve($request_id, $name, $employee_id);
+            SqlTable\TblRequestDetails::approve($request_id, $name, $employee_id, $or_number);
             return $response->withStatus(200)
                 ->withHeader('Content-Type', 'application/json')
                 ->write(json_encode([

@@ -15,6 +15,8 @@ class TblRequestDetails extends SqlTable
     public $hash_key;
     public $registrar_acc_id;
     public $treasury_acc_id;
+    public $date_payed;
+    public $or_number;
     function __construct($stud_acc_id, $date_of_request, $hash_key = '')
     {
         $this->stud_acc_id = $stud_acc_id;
@@ -34,7 +36,9 @@ class TblRequestDetails extends SqlTable
                 date_of_request  DATE          NOT NULL,
                 hash_key         VARCHAR( 23 ) NOT NULL,
                 registrar_acc_id INT( 11 )     ,
-                treasury_acc_id  INT( 11 )                     
+                treasury_acc_id  INT( 11 )     ,
+                date_payed       DATETIME      ,
+                or_number        VARCHAR( 100 )                 
                 );";
             self::exec($sql);
         } catch (PDOException $e) {
@@ -78,7 +82,7 @@ class TblRequestDetails extends SqlTable
     {
         $tname = self::$table_name;
         $sql = "
-        select $tname.req_id, hash_key, $tname.date_of_request,
+        select $tname.req_id, hash_key, $tname.date_of_request, $tname.or_number, $tname.date_payed,
         tblRequestDetails.registrar_acc_id,
         tblRequestDetails.treasury_acc_id,
         GROUP_CONCAT(DISTINCT(
@@ -114,7 +118,7 @@ class TblRequestDetails extends SqlTable
     {
         $tname = self::$table_name;
         $sql = "
-        select $tname.req_id, hash_key, $tname.date_of_request,
+        select $tname.req_id, hash_key, $tname.date_of_request, $tname.or_number, $tname.date_payed,
         tblRequestDetails.registrar_acc_id,
         tblRequestDetails.treasury_acc_id,
         GROUP_CONCAT(DISTINCT(
@@ -174,7 +178,7 @@ class TblRequestDetails extends SqlTable
     {
         $tname = self::$table_name;
         $sql = "
-        select $tname.req_id, hash_key, $tname.date_of_request,
+        select $tname.req_id, hash_key, $tname.date_of_request, $tname.or_number, $tname.date_payed,
         tblRequestDetails.registrar_acc_id,
         tblRequestDetails.treasury_acc_id,
         tblStudent.sid,
@@ -206,7 +210,7 @@ class TblRequestDetails extends SqlTable
         return $ex->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public static function approve($request_id, $employee_name, $employee_id)
+    public static function approve($request_id, $employee_name, $employee_id, $or_number = '001')
     {
         $employee = TblAdmin::get_admin($employee_name, $employee_id);
 
@@ -228,11 +232,14 @@ class TblRequestDetails extends SqlTable
         $tname = self::$table_name;
         $sql = "
             UPDATE $tname
-            SET $columnToUpdate=?
+            SET 
+                $columnToUpdate=?,
+                or_number=?,
+                date_payed=now()
             WHERE req_id=?
         ;";
         $conn = self::get_connection();
-        $conn->prepare($sql)->execute([$eid, $request_id,]);
+        $conn->prepare($sql)->execute([$eid, $or_number, $request_id,]);
     }
 
 
@@ -246,19 +253,27 @@ class TblRequestDetails extends SqlTable
         $eid = $employee[0]['eid'];
         $office = $employee[0]['office'];
         $columnToUpdate = '';
+        $tname = self::$table_name;
         if ($office == 'registrar') {
             $columnToUpdate = 'registrar_acc_id';
+            $sql = "
+                UPDATE $tname
+                SET $columnToUpdate=NULL
+                WHERE req_id=?
+            ;";
         } elseif ($office == 'treasury') {
             $columnToUpdate = 'treasury_acc_id';
+
+            $sql = "
+            UPDATE $tname
+            SET $columnToUpdate=NULL,
+            or_number=NULL,
+            date_payed=NULL
+            WHERE req_id=?
+        ;";
         } else {
             throw new \Exception('Unknown employee office');
         }
-        $tname = self::$table_name;
-        $sql = "
-            UPDATE $tname
-            SET $columnToUpdate=NULL
-            WHERE req_id=?
-        ;";
         $conn = self::get_connection();
         $conn->prepare($sql)->execute([$request_id]);
     }
